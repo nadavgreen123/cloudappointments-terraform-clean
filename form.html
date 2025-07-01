@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>טופס קביעת תור - CloudAppointments</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 50px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .required {
+            color: #e74c3c;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="datetime-local"],
+        select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background-color: #f8f9fa;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            background-color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .status-message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            animation: slideIn 0.3s ease-in-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .loading {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .pdf-link {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .pdf-link:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .user-info {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 1000;
+            font-size: 14px;
+        }
+
+        .user-info a {
+            color: #dc3545;
+            text-decoration: none;
+            margin-right: 10px;
+        }
+
+        .user-info a:hover {
+            text-decoration: underline;
+        }
+
+        /* סגנון לכפתור התורים שלי */
+        .nav-link {
+            color: #667eea;
+            text-decoration: none;
+            margin-right: 10px;
+            font-weight: 600;
+        }
+
+        .nav-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 30px 20px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+            
+            .user-info {
+                font-size: 12px;
+                padding: 8px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- הוספת תצוגת משתמש מחובר -->
+    <div class="user-info" id="userInfo" style="display: none;">
+        <span id="userEmail"></span> | 
+        <a href="my-appointments.html" class="nav-link">התורים שלי 📋</a> | 
+        <a href="#" onclick="logout()">יציאה</a>
+    </div>
+
+    <div class="container">
+        <div class="logo">📅</div>
+        <h1>קביעת תור</h1>
+        
+        <form id="appointmentForm">
+            <div class="form-group">
+                <label for="fullName">שם מלא <span class="required">*</span></label>
+                <input type="text" id="fullName" name="fullName" required placeholder="הקלד את שמך המלא">
+            </div>
+
+            <div class="form-group">
+                <label for="email">כתובת דוא"ל <span class="required">*</span></label>
+                <input type="email" id="email" name="email" required placeholder="example@email.com">
+            </div>
+
+            <div class="form-group">
+                <label for="serviceType">סוג השירות <span class="required">*</span></label>
+                <select id="serviceType" name="serviceType" required>
+                    <option value="">-- בחר שירות --</option>
+                    <option value="תספורת גברים">תספורת גברים</option>
+                    <option value="תספורת נשים">תספורת נשים</option>
+                    <option value="צביעה">צביעה</option>
+                    <option value="החלקה">החלקה</option>
+                    <option value="טיפול פנים">טיפול פנים</option>
+                    <option value="מניקור">מניקור</option>
+                    <option value="פדיקור">פדיקור</option>
+                    <option value="איפור">איפור</option>
+                    <option value="אחר">אחר</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="dateTime">תאריך ושעה <span class="required">*</span></label>
+                <input type="datetime-local" id="dateTime" name="dateTime" required>
+            </div>
+
+            <button type="submit" id="submitBtn">
+                <span id="buttonText">קבע תור</span>
+            </button>
+        </form>
+
+        <div id="statusMessage"></div>
+    </div>
+
+    <script>
+        // בדיקת התחברות
+        const idToken = sessionStorage.getItem('idToken');
+        const userEmail = sessionStorage.getItem('userEmail');
+        
+        console.log('בדיקת התחברות...');
+        console.log('Token exists:', !!idToken);
+        console.log('User email:', userEmail);
+        
+        if (!idToken) {
+            alert('יש להתחבר למערכת');
+            window.location.href = 'login.html';
+        } else {
+            // הצגת פרטי המשתמש
+            document.getElementById('userInfo').style.display = 'block';
+            document.getElementById('userEmail').textContent = userEmail || 'משתמש מחובר';
+        }
+
+        // פונקציית יציאה
+        function logout() {
+            sessionStorage.clear();
+            window.location.href = 'login.html';
+        }
+
+        // הגדרת תאריך מינימלי (עכשיו)
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        document.getElementById('dateTime').min = now.toISOString().slice(0, 16);
+
+        // הגדרת תאריך מקסימלי (3 חודשים מהיום)
+        const maxDate = new Date();
+        maxDate.setMonth(maxDate.getMonth() + 3);
+        document.getElementById('dateTime').max = maxDate.toISOString().slice(0, 16);
+
+        // טיפול בשליחת הטופס
+        document.getElementById('appointmentForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const buttonText = document.getElementById('buttonText');
+            const statusMessage = document.getElementById('statusMessage');
+            
+            // קבלת הנתונים מהטופס
+            const formData = {
+                fullName: document.getElementById('fullName').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                serviceType: document.getElementById('serviceType').value,
+                dateTime: document.getElementById('dateTime').value
+            };
+            
+            // ולידציה נוספת
+            if (!formData.fullName || !formData.email || !formData.serviceType || !formData.dateTime) {
+                statusMessage.innerHTML = '<div class="status-message error">נא למלא את כל השדות החובה</div>';
+                return;
+            }
+            
+            // ולידציה של אימייל
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(formData.email)) {
+                statusMessage.innerHTML = '<div class="status-message error">נא להזין כתובת דוא"ל תקינה</div>';
+                return;
+            }
+            
+            // נעילת הכפתור והצגת אנימציה
+            submitBtn.disabled = true;
+            buttonText.innerHTML = '<span class="spinner"></span>שולח בקשה...';
+            statusMessage.innerHTML = '';
+            
+            try {
+                // יצירת התור ב-AWS
+                console.log('יוצר תור חדש...');
+                console.log('API URL:', 'https://cgs861tnx4.execute-api.us-east-1.amazonaws.com/prod/appointments');
+                console.log('Token:', idToken.substring(0, 20) + '...');
+                
+                // שליחה עם Authorization header
+                const appointmentResponse = await fetch('https://cgs861tnx4.execute-api.us-east-1.amazonaws.com/prod/appointments', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Authorization': idToken  // שליחת הטוקן
+                    },
+                    body: JSON.stringify({
+                        fullName: formData.fullName,
+                        serviceType: formData.serviceType,
+                        dateTime: formData.dateTime,
+                        userId: 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                        email: formData.email
+                    })
+                });
+                
+                console.log('Response status:', appointmentResponse.status);
+                console.log('Response headers:', appointmentResponse.headers);
+                
+                if (!appointmentResponse.ok) {
+                    const errorText = await appointmentResponse.text();
+                    console.error('Server response:', errorText);
+                    
+                    // טיפול בשגיאות ספציפיות
+                    if (appointmentResponse.status === 401) {
+                        throw new Error('אין הרשאה - נא להתחבר מחדש');
+                    } else if (appointmentResponse.status === 403) {
+                        throw new Error('אין גישה לשירות');
+                    } else {
+                        throw new Error('שגיאה ביצירת התור - נסה שוב');
+                    }
+                }
+                
+                const appointmentData = await appointmentResponse.json();
+                console.log('התור נוצר בהצלחה:', appointmentData);
+                
+                // הצגת הודעת הצלחה
+                let successHtml = `
+                    <div class="status-message success">
+                        <h3>✅ התור נקבע בהצלחה!</h3>
+                        <p><strong>מספר תור:</strong> ${appointmentData.appointmentId || 'יוצר מספר...'}</p>
+                        <p><strong>שם:</strong> ${formData.fullName}</p>
+                        <p><strong>שירות:</strong> ${formData.serviceType}</p>
+                        <p><strong>תאריך ושעה:</strong> ${new Date(formData.dateTime).toLocaleString('he-IL')}</p>
+                `;
+                
+                if (appointmentData.pdfUrl) {
+                    successHtml += `
+                        <a href="${appointmentData.pdfUrl}" target="_blank" class="pdf-link">
+                            📄 צפה באישור התור
+                        </a><br>
+                    `;
+                }
+                
+                successHtml += `
+                    <p style="margin-top: 10px; font-size: 14px;">
+                        📧 אישור נשלח לכתובת: ${formData.email}
+                    </p>
+                `;
+                
+                successHtml += `</div>`;
+                statusMessage.innerHTML = successHtml;
+                
+                // איפוס הטופס
+                document.getElementById('appointmentForm').reset();
+                
+            } catch (error) {
+                console.error('שגיאה כללית:', error);
+                
+                // אם יש בעיית אימות, נחזיר להתחברות
+                if (error.message.includes('הרשאה')) {
+                    setTimeout(() => {
+                        sessionStorage.clear();
+                        window.location.href = 'login.html';
+                    }, 2000);
+                }
+                
+                statusMessage.innerHTML = `
+                    <div class="status-message error">
+                        ❌ ${error.message}<br>
+                        <small>בדקי את החיבור לאינטרנט ונסי שוב</small>
+                    </div>
+                `;
+            } finally {
+                // החזרת הכפתור למצב רגיל
+                submitBtn.disabled = false;
+                buttonText.textContent = 'קבע תור';
+            }
+        });
+
+        // בדיקת חיבור בטעינת הדף
+        console.log('טופס קביעת תור נטען בהצלחה');
+        console.log('משתמש מחובר:', userEmail || 'לא זוהה');
+        console.log('Token קיים:', !!idToken);
+        
+        // בדיקה שזה לא קובץ login בטעות
+        if (document.getElementById('loginForm')) {
+            console.error('❌ זה קובץ login ולא form!');
+            alert('שגיאה: הקובץ הלא נכון נטען');
+        }
+    </script>
+</body>
+</html>

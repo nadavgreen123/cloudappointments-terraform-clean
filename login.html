@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>התחברות - CloudAppointments</title>
+    
+    <!-- Amazon Cognito Identity SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/amazon-cognito-identity-js@6.3.1/dist/amazon-cognito-identity.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+            padding: 40px;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 50px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input[type="email"],
+        input[type="password"],
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background-color: #f8f9fa;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            background-color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
+        }
+
+        .password-toggle {
+            position: absolute;
+            left: 15px;
+            top: 42px;
+            cursor: pointer;
+            font-size: 20px;
+            color: #666;
+            background: none;
+            border: none;
+            padding: 5px;
+        }
+
+        .password-toggle:hover {
+            color: #667eea;
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        button[type="submit"]:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        button[type="submit"]:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            animation: slideIn 0.3s ease-in-out;
+        }
+
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .message.warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .forgot-password {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .forgot-password a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .forgot-password a:hover {
+            text-decoration: underline;
+        }
+
+        /* הוספה: סגנון למעבר בין התחברות להרשמה */
+        .auth-toggle {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .auth-toggle a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .auth-toggle a:hover {
+            text-decoration: underline;
+        }
+
+        /* הסתרת טופס ההרשמה בהתחלה */
+        #signupForm {
+            display: none;
+        }
+
+        /* הוספה: הודעה על דרישות סיסמה */
+        .password-requirements {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">🔐</div>
+        <h1 id="authTitle">התחברות למערכת</h1>
+        <p style="text-align: center; margin-bottom: 20px; color: #666;" id="authSubtitle">היכנס למערכת כדי לקבוע תור</p>
+        
+        <!-- טופס התחברות -->
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">כתובת אימייל</label>
+                <input type="email" id="email" name="email" required 
+                       placeholder="your@email.com">
+            </div>
+
+            <div class="form-group">
+                <label for="password">סיסמה</label>
+                <input type="password" id="password" name="password" required 
+                       placeholder="הקלד סיסמה">
+                <button type="button" class="password-toggle" id="togglePassword">
+                    👁️
+                </button>
+            </div>
+
+            <button type="submit" id="loginBtn">התחבר</button>
+            
+            <div class="forgot-password">
+                <a href="#" onclick="handleForgotPassword(); return false;">שכחת סיסמה?</a>
+            </div>
+            
+            <div class="auth-toggle">
+                <span>אין לך חשבון?</span>
+                <a href="#" onclick="toggleAuthMode('signup'); return false;">הרשם עכשיו</a>
+            </div>
+        </form>
+
+        <!-- טופס הרשמה חדש -->
+        <form id="signupForm" style="display: none;">
+            <div class="form-group">
+                <label for="signupName">שם מלא</label>
+                <input type="text" id="signupName" name="signupName" required 
+                       placeholder="ישראל ישראלי">
+            </div>
+
+            <div class="form-group">
+                <label for="signupEmail">כתובת אימייל</label>
+                <input type="email" id="signupEmail" name="signupEmail" required 
+                       placeholder="your@email.com">
+            </div>
+
+            <div class="form-group">
+                <label for="signupPassword">סיסמה</label>
+                <input type="password" id="signupPassword" name="signupPassword" required 
+                       placeholder="בחר סיסמה חזקה">
+                <button type="button" class="password-toggle" id="toggleSignupPassword">
+                    👁️
+                </button>
+                <div class="password-requirements">
+                    הסיסמה חייבת להכיל לפחות 8 תווים, אות גדולה, אות קטנה ומספר
+                </div>
+            </div>
+
+            <button type="submit" id="signupBtn">הרשם</button>
+            
+            <div class="auth-toggle">
+                <span>יש לך כבר חשבון?</span>
+                <a href="#" onclick="toggleAuthMode('login'); return false;">התחבר</a>
+            </div>
+        </form>
+
+        <div id="messageDiv"></div>
+
+        <!-- הוסר: רשימת משתמשי דמו -->
+    </div>
+
+    <script>
+        // הגדרות Cognito - מהדוח שלך!
+        const poolData = {
+            UserPoolId: 'us-east-1_mU4JuiX78',  // מהדוח שלך
+            ClientId: '5u470h20pvjumq81fntbg23oga'  // מהדוח שלך
+        };
+
+        // יצירת User Pool object
+        const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
+
+        // כפתור הצגת/הסתרת סיסמה - התחברות
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+        
+        togglePassword.addEventListener('click', function() {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            this.textContent = type === 'password' ? '👁️' : '🔒';
+        });
+
+        // כפתור הצגת/הסתרת סיסמה - הרשמה
+        const toggleSignupPassword = document.getElementById('toggleSignupPassword');
+        const signupPasswordInput = document.getElementById('signupPassword');
+        
+        toggleSignupPassword.addEventListener('click', function() {
+            const type = signupPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            signupPasswordInput.setAttribute('type', type);
+            this.textContent = type === 'password' ? '👁️' : '🔒';
+        });
+
+        // פונקציה להחלפה בין התחברות להרשמה
+        function toggleAuthMode(mode) {
+            const loginForm = document.getElementById('loginForm');
+            const signupForm = document.getElementById('signupForm');
+            const authTitle = document.getElementById('authTitle');
+            const authSubtitle = document.getElementById('authSubtitle');
+            const messageDiv = document.getElementById('messageDiv');
+            
+            // ניקוי הודעות
+            messageDiv.innerHTML = '';
+            
+            if (mode === 'signup') {
+                loginForm.style.display = 'none';
+                signupForm.style.display = 'block';
+                authTitle.textContent = 'הרשמה למערכת';
+                authSubtitle.textContent = 'צור חשבון חדש כדי להתחיל';
+            } else {
+                loginForm.style.display = 'block';
+                signupForm.style.display = 'none';
+                authTitle.textContent = 'התחברות למערכת';
+                authSubtitle.textContent = 'היכנס למערכת כדי לקבוע תור';
+            }
+        }
+
+        // טיפול בהרשמה
+        document.getElementById('signupForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('signupName').value.trim();
+            const email = document.getElementById('signupEmail').value.trim();
+            const password = document.getElementById('signupPassword').value;
+            const signupBtn = document.getElementById('signupBtn');
+            const messageDiv = document.getElementById('messageDiv');
+            
+            signupBtn.disabled = true;
+            signupBtn.innerHTML = '<span class="spinner"></span>יוצר חשבון...';
+            messageDiv.innerHTML = '';
+            
+            try {
+                // יצירת attributes למשתמש
+                const attributeList = [];
+                
+                const dataEmail = {
+                    Name: 'email',
+                    Value: email
+                };
+                const dataName = {
+                    Name: 'name',
+                    Value: name
+                };
+                
+                const attributeEmail = new AmazonCognitoIdentity.CognitoUserAttribute(dataEmail);
+                const attributeName = new AmazonCognitoIdentity.CognitoUserAttribute(dataName);
+                
+                attributeList.push(attributeEmail);
+                attributeList.push(attributeName);
+                
+                // ביצוע הרשמה
+                userPool.signUp(email, password, attributeList, null, function(err, result) {
+                    if (err) {
+                        console.error('Signup error:', err);
+                        
+                        let errorMessage = 'שגיאה בהרשמה';
+                        
+                        if (err.code === 'UsernameExistsException') {
+                            errorMessage = 'משתמש עם כתובת אימייל זו כבר קיים במערכת';
+                        } else if (err.code === 'InvalidPasswordException') {
+                            errorMessage = 'הסיסמה לא עומדת בדרישות המינימום';
+                        } else if (err.code === 'InvalidParameterException') {
+                            errorMessage = 'אחד הפרטים שהוזנו אינו תקין';
+                        }
+                        
+                        messageDiv.innerHTML = `
+                            <div class="message error">
+                                <h3>❌ ${errorMessage}</h3>
+                                <p style="font-size: 12px;">${err.message || ''}</p>
+                            </div>
+                        `;
+                        
+                        signupBtn.disabled = false;
+                        signupBtn.innerHTML = 'הרשם';
+                        return;
+                    }
+                    
+                    console.log('Signup successful:', result);
+                    
+                    messageDiv.innerHTML = `
+                        <div class="message success">
+                            <h3>✅ ההרשמה הצליחה!</h3>
+                            <p>נשלח אליך מייל אימות לכתובת: ${email}</p>
+                            <p style="font-size: 12px; margin-top: 10px;">אנא אשר את המייל ולאחר מכן התחבר</p>
+                        </div>
+                    `;
+                    
+                    // מעבר להתחברות אחרי 3 שניות
+                    setTimeout(() => {
+                        toggleAuthMode('login');
+                        document.getElementById('email').value = email;
+                    }, 3000);
+                    
+                    signupBtn.disabled = false;
+                    signupBtn.innerHTML = 'הרשם';
+                });
+                
+            } catch (error) {
+                console.error('Unexpected error:', error);
+                messageDiv.innerHTML = `
+                    <div class="message error">
+                        <h3>❌ שגיאה בהרשמה</h3>
+                        <p>נסה שוב מאוחר יותר</p>
+                    </div>
+                `;
+                signupBtn.disabled = false;
+                signupBtn.innerHTML = 'הרשם';
+            }
+        });
+
+        // פונקציית שכחתי סיסמה
+        async function handleForgotPassword() {
+            const email = prompt('הכנס את כתובת האימייל שלך:');
+            if (!email) return;
+            
+            const messageDiv = document.getElementById('messageDiv');
+            
+            try {
+                const userData = {
+                    Username: email,
+                    Pool: userPool
+                };
+                
+                const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+                
+                cognitoUser.forgotPassword({
+                    onSuccess: function(data) {
+                        console.log('CodeDeliveryData:', data);
+                        
+                        const code = prompt('קוד אימות נשלח למייל שלך. הכנס את הקוד:');
+                        if (!code) return;
+                        
+                        const newPassword = prompt('הכנס סיסמה חדשה (לפחות 8 תווים, אות גדולה, אות קטנה ומספר):');
+                        if (!newPassword) return;
+                        
+                        cognitoUser.confirmPassword(code, newPassword, {
+                            onSuccess: function() {
+                                messageDiv.innerHTML = `
+                                    <div class="message success">
+                                        <h3>✅ הסיסמה שונתה בהצלחה!</h3>
+                                        <p>כעת תוכל להתחבר עם הסיסמה החדשה</p>
+                                    </div>
+                                `;
+                            },
+                            onFailure: function(err) {
+                                alert('שגיאה באישור הסיסמה החדשה: ' + err.message);
+                            }
+                        });
+                    },
+                    onFailure: function(err) {
+                        console.error('Forgot password error:', err);
+                        alert('שגיאה באיפוס סיסמה: ' + err.message);
+                    }
+                });
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('שגיאה באיפוס סיסמה');
+            }
+        }
+
+        // טיפול בשליחת הטופס - התחברות אמיתית ל-Cognito (הקוד הקיים שלך נשאר כמו שהוא)
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('loginBtn');
+            const messageDiv = document.getElementById('messageDiv');
+            
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<span class="spinner"></span>מתחבר...';
+            messageDiv.innerHTML = '';
+            
+            try {
+                // יצירת authentication details
+                const authenticationData = {
+                    Username: email,
+                    Password: password
+                };
+                const authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails(authenticationData);
+                
+                // יצירת Cognito User
+                const userData = {
+                    Username: email,
+                    Pool: userPool
+                };
+                const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+                
+                // שמירת cognitoUser לשימוש בפונקציה חיצונית
+                window.currentCognitoUser = cognitoUser;
+                
+                // ביצוע התחברות
+                cognitoUser.authenticateUser(authenticationDetails, {
+                    onSuccess: function(result) {
+                        // קבלת ה-JWT Token האמיתי מ-Cognito!
+                        const idToken = result.getIdToken().getJwtToken();
+                        const accessToken = result.getAccessToken().getJwtToken();
+                        
+                        console.log('התחברות הצליחה!');
+                        console.log('ID Token:', idToken.substring(0, 20) + '...');
+                        
+                        // שמירת הטוקנים ב-sessionStorage
+                        sessionStorage.setItem('idToken', idToken);
+                        sessionStorage.setItem('accessToken', accessToken);
+                        sessionStorage.setItem('userEmail', email);
+                        
+                        messageDiv.innerHTML = `
+                            <div class="message success">
+                                <h3>✅ התחברת בהצלחה!</h3>
+                                <p>שלום ${email}</p>
+                                <p style="font-size: 12px;">מעבר לטופס קביעת תור...</p>
+                            </div>
+                        `;
+                        
+                        // מעבר לטופס קביעת תור
+                        setTimeout(() => {
+                            window.location.href = 'form.html';
+                        }, 1500);
+                    },
+                    
+                    onFailure: function(err) {
+                        console.error('שגיאת התחברות:', err);
+                        
+                        let errorMessage = 'שגיאה בהתחברות';
+                        
+                        // טיפול בשגיאות ספציפיות
+                        if (err.code === 'NotAuthorizedException') {
+                            errorMessage = 'שם משתמש או סיסמה שגויים';
+                        } else if (err.code === 'UserNotFoundException') {
+                            errorMessage = 'המשתמש לא נמצא במערכת';
+                        } else if (err.code === 'UserNotConfirmedException') {
+                            errorMessage = 'המשתמש לא אומת - בדקי את המייל';
+                        } else if (err.code === 'NetworkError') {
+                            errorMessage = 'בעיית חיבור לאינטרנט';
+                        }
+                        
+                        messageDiv.innerHTML = `
+                            <div class="message error">
+                                <h3>❌ ${errorMessage}</h3>
+                                <p style="font-size: 12px;">${err.message || ''}</p>
+                            </div>
+                        `;
+                        
+                        loginBtn.disabled = false;
+                        loginBtn.innerHTML = 'התחבר';
+                    },
+                    
+                    mfaRequired: function(codeDeliveryDetails) {
+                        // אם יש MFA - לא רלוונטי כרגע
+                        console.log('MFA required');
+                    },
+                    
+                    newPasswordRequired: function(userAttributes, requiredAttributes) {
+                        // אם צריך לשנות סיסמה
+                        console.log('New password required');
+                        
+                        // הצגת טופס להחלפת סיסמה
+                        messageDiv.innerHTML = `
+                            <div class="message warning">
+                                <h3>⚠️ נדרשת סיסמה חדשה</h3>
+                                <p>יש להגדיר סיסמה קבועה בהתחברות הראשונה</p>
+                                <div class="form-group" style="margin-top: 15px;">
+                                    <input type="password" id="newPassword" placeholder="סיסמה חדשה (לפחות 8 תווים)" 
+                                           style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                                </div>
+                                <button onclick="setNewPassword()" 
+                                        style="background: #28a745; color: white; border: none; padding: 10px 20px; 
+                                               border-radius: 5px; cursor: pointer; margin-top: 10px; width: 100%;">
+                                    הגדר סיסמה חדשה
+                                </button>
+                            </div>
+                        `;
+                        
+                        // שמירת הפונקציה להחלפת סיסמה
+                        window.setNewPassword = function() {
+                            const newPassword = document.getElementById('newPassword').value;
+                            if (!newPassword || newPassword.length < 8) {
+                                alert('הסיסמה חייבת להכיל לפחות 8 תווים');
+                                return;
+                            }
+                            
+                            // קבלת ה-cognitoUser מה-window
+                            const cognitoUser = window.currentCognitoUser;
+                            
+                            cognitoUser.completeNewPasswordChallenge(newPassword, {}, {
+                                onSuccess: function(result) {
+                                    const idToken = result.getIdToken().getJwtToken();
+                                    const accessToken = result.getAccessToken().getJwtToken();
+                                    
+                                    sessionStorage.setItem('idToken', idToken);
+                                    sessionStorage.setItem('accessToken', accessToken);
+                                    sessionStorage.setItem('userEmail', email);
+                                    
+                                    messageDiv.innerHTML = `
+                                        <div class="message success">
+                                            <h3>✅ הסיסמה הוחלפה בהצלחה!</h3>
+                                            <p>מעבר לטופס קביעת תור...</p>
+                                        </div>
+                                    `;
+                                    
+                                    setTimeout(() => {
+                                        window.location.href = 'form.html';
+                                    }, 1500);
+                                },
+                                onFailure: function(err) {
+                                    console.error('שגיאה בהחלפת סיסמה:', err);
+                                    alert('שגיאה בהחלפת סיסמה: ' + err.message);
+                                }
+                            });
+                        };
+                        
+                        loginBtn.disabled = false;
+                        loginBtn.innerHTML = 'התחבר';
+                    }
+                });
+                
+            } catch (error) {
+                console.error('שגיאה כללית:', error);
+                messageDiv.innerHTML = `
+                    <div class="message error">
+                        <h3>❌ שגיאה בהתחברות</h3>
+                        <p>נסי שוב מאוחר יותר</p>
+                    </div>
+                `;
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = 'התחבר';
+            }
+        });
+
+        // בדיקה אם המשתמש כבר מחובר
+        window.addEventListener('load', function() {
+            const existingToken = sessionStorage.getItem('idToken');
+            if (existingToken && !existingToken.includes('demo_token')) {
+                console.log('משתמש כבר מחובר, מעביר לטופס...');
+                window.location.href = 'form.html';
+            } else if (existingToken && existingToken.includes('demo_token')) {
+                // ניקוי טוקן דמה
+                sessionStorage.clear();
+                console.log('ניקוי טוקן דמה');
+            }
+        });
+    </script>
+</body>
+</html>
